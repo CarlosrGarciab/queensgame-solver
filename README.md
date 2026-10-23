@@ -22,8 +22,20 @@ Ejecuta el solver desde la raíz del proyecto:
 python solver.py
 ```
 
-El programa muestra la solución encontrada como una matriz y el tiempo de
-ejecución en milisegundos.
+El módulo también expone `solve_queens(board)`, que devuelve una matriz con
+las reinas o `None` si el tablero no tiene solución:
+
+```python
+from solver import board, solve_queens
+
+solution = solve_queens(board)
+```
+
+Para ejecutar las pruebas:
+
+```bash
+python -m unittest discover
+```
 
 ## Reglas consideradas
 
@@ -42,9 +54,6 @@ valores numéricos. Cada valor representa una región de color diferente.
 ```text
 .
 ├── README.md
-└── solver.py
+├── solver.py
+└── test_solver.py
 ```
-
-## Licencia
-
-Este proyecto no incluye todavía una licencia.

@@ -1,83 +1,103 @@
-# Backtracking - Queens Game
-import numpy as np
-import time
+"""Backtracking solver for Queens Game boards."""
 
-"""
-Colores del tablero (board):
-0: Azul, 1: Naranja, 2: Lila, 3: Celeste, 4: Marrón, 5: Rojo
-"""
+import time
+from typing import Optional
+
+import numpy as np
+
+
+# Each number identifies a different region of the board.
 board = np.array([
-    [0, 0, 1, 1, 4, 4],
-    [0, 0, 1, 1, 3, 4],
-    [0, 1, 1, 3, 3, 4],
-    [0, 1, 2, 2, 3, 3],
-    [0, 0, 2, 2, 3, 5],
-    [0, 0, 2, 2, 5, 5]
+    [5, 5, 5, 5, 3, 4],
+    [5, 5, 5, 3, 3, 3],
+    [0, 0, 1, 1, 3, 3],
+    [0, 0, 1, 1, 1, 1],
+    [0, 0, 0, 2, 2, 1],
+    [0, 0, 2, 2, 2, 2],
 ])
 
-max_rows, max_cols = board.shape
 
-"""
-Estado de resolución (board_solved):
-0: Vacío / No se sabe aún
-1: Sí es Reina
-"""
-board_solved = np.zeros((max_rows, max_cols), dtype=int)
+def validate_board(board: np.ndarray) -> None:
+    """Raise ValueError when a board cannot be solved by this solver."""
+    if board.ndim != 2:
+        raise ValueError("El tablero debe ser una matriz de dos dimensiones.")
+    if board.shape[0] == 0 or board.shape[1] == 0:
+        raise ValueError("El tablero no puede estar vacío.")
 
-def solve_queens(board, board_solved, row):
-    # Si ya pasamos de la última fila, ¡ganamos!
+
+def can_place_queen(
+    board: np.ndarray,
+    board_solved: np.ndarray,
+    row: int,
+    col: int,
+) -> bool:
+    """Return whether a queen can be placed at ``row``, ``col``."""
+    max_rows, max_cols = board.shape
+
+    if board_solved[row, col] != 0:
+        return False
+
+    # Queens cannot occupy adjacent cells, including diagonals.
+    for current_row in range(max(0, row - 1), min(max_rows, row + 2)):
+        for current_col in range(max(0, col - 1), min(max_cols, col + 2)):
+            if board_solved[current_row, current_col] == 1:
+                return False
+
+    # There can only be one queen in each column.
+    if np.any(board_solved[:, col] == 1):
+        return False
+
+    # There can only be one queen in each region.
+    current_region = board[row, col]
+    if np.any(board_solved[board == current_region] == 1):
+        return False
+
+    return True
+
+
+def _search(
+    board: np.ndarray,
+    board_solved: np.ndarray,
+    row: int,
+) -> bool:
+    max_rows, max_cols = board.shape
     if row == max_rows:
         return True
-    
-    # Probar cada columna en la fila actual
+
     for col in range(max_cols):
         if can_place_queen(board, board_solved, row, col):
-            # Colocar reina (1)
             board_solved[row, col] = 1
-            
-            # Recursión
-            if solve_queens(board, board_solved, row + 1):
+            if _search(board, board_solved, row + 1):
                 return True
-            
-            # La recursión falló: hacemos backtracking y volvemos a poner la celda en 0 (vacía)
             board_solved[row, col] = 0
+
     return False
 
-def can_place_queen(board, board_solved, row, col):
-    # Verificar que la celda esté vacía (0)
-    if board_solved[row, col] == 0:
-        
-        # 1. Verificar vecinos (1 bloque alrededor)
-        for r in range(row - 1, row + 2):
-            for c in range(col - 1, col + 2):
-                if (0 <= r < max_rows) and (0 <= c < max_cols):
-                    if board_solved[r, c] == 1:
-                        return False # Hay una reina vecina
-        
-        # 2. Verificar la misma columna
-        for r in range(max_rows):
-            if board_solved[r, col] == 1:
-                return False # Ya hay otra reina en esta columna
-        
-        # 3. Verificar la región de color
-        current_color = board[row, col]
-        for r in range(max_rows):
-            for c in range(max_cols):
-                if board[r, c] == current_color and board_solved[r, c] == 1:
-                    return False # Ya hay una reina en este color
-                    
-        return True
-    return False
 
-start_time = time.time()
+def solve_queens(board: np.ndarray) -> Optional[np.ndarray]:
+    """Find a valid queen placement, or return ``None`` when none exists."""
+    board = np.asarray(board)
+    validate_board(board)
+    board_solved = np.zeros(board.shape, dtype=int)
 
-# Ejecutar el algoritmo y mostrar el resultado
-if solve_queens(board, board_solved, 0):
-    end_time = time.time()
-    elapsed_time = (end_time - start_time) * 1000 # Convertir a ms
-    
+    if _search(board, board_solved, 0):
+        return board_solved
+    return None
+
+
+def main() -> None:
+    start_time = time.perf_counter()
+    solution = solve_queens(board)
+    elapsed_time = (time.perf_counter() - start_time) * 1000
+
+    if solution is None:
+        print("No se encontró solución.")
+        return
+
     print("¡Tablero resuelto con éxito!\n")
-    print(board_solved)
+    print(solution)
     print(f"\nTiempo de ejecución: {elapsed_time:.4f} ms")
-else:
-    print("No se encontró solución.")
+
+
+if __name__ == "__main__":
+    main()
